@@ -1,7 +1,7 @@
 CloudFS
 =======
 
-Filesystem which allows to treat any http-accessible file as local.
+Filesystem which allows you to treat any http accessible file as local.
 
 Dependencies
 ------------

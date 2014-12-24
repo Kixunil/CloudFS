@@ -1,4 +1,4 @@
-all: test_cloudfile cloudfs
+all: cloudfs
 
 clean:
 	rm -f *.o test_cloudfile cloudfs
