@@ -17,6 +17,9 @@ class CloudFile {
 		URL mUrl;
 		uint64_t mSize, mOffset;
 		bool mSeekable;
+		InstantSend::Connection mConn;
+
+		HTTPResponse sendReq(HTTPRequest &request);
 };
 
 inline void CloudFile::seek(uint64_t where) {

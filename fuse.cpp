@@ -79,9 +79,13 @@ int CloudFS_release(const char *, struct fuse_file_info *fi) {
 }
 
 int CloudFS_read(const char *, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-	CloudFile cf(ffiToCf(fi));
-	cf.seek(offset);
-	return cf.read(buf, size);
+	try {
+		CloudFile cf(ffiToCf(fi));
+		cf.seek(offset);
+		return cf.read(buf, size);
+	} catch(...) {
+		return -EIO;
+	}
 }
 
 int CloudFS_write(const char *, const char *, size_t, off_t, struct fuse_file_info *) {

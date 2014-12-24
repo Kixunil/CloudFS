@@ -6,13 +6,16 @@
 using namespace std;
 using namespace InstantSend;
 
-CloudFile::CloudFile(const URL &url) : mUrl(url), mOffset(0) {
-	Connection conn(url.host(), url.port());
+CloudFile::CloudFile(const URL &url) :
+	mUrl(url),
+	mOffset(0),
+	mConn(mUrl.host(), mUrl.port()) {
+
 	HTTPRequest request(HTTPRequest::HEAD, url);
 	request["Range"] = "bytes=0-";
-	request.send(conn);
+	request["Connection"] = "Keep-Alive";
 
-	HTTPResponse response(conn);
+	HTTPResponse response(sendReq(request));
 	if(response.code() != 200 && response.code() != 206)
 		throw runtime_error("HTTP error: " + response.respStr());
 
@@ -25,8 +28,21 @@ CloudFile::CloudFile(const URL &url) : mUrl(url), mOffset(0) {
 	}
 }
 
+HTTPResponse CloudFile::sendReq(HTTPRequest &request) {
+	try {
+		request.send(mConn);
+		return HTTPResponse(mConn);
+
+	// TODO filter out fatal errors
+	} catch(...) {
+		mConn = Connection(mUrl.host(), mUrl.port());
+
+		request.send(mConn);
+		return HTTPResponse(mConn);
+	}
+}
+
 size_t CloudFile::read(void *data, size_t size) {
-	Connection conn(mUrl.host(), mUrl.port());
 	HTTPRequest request(HTTPRequest::GET, mUrl);
 	request["Range"] = "bytes=";
 	char buf[30];
@@ -35,8 +51,8 @@ size_t CloudFile::read(void *data, size_t size) {
 	request["Range"] += "-";
 	sprintf(buf, "%lu", mOffset + size);
 	request["Range"] += buf;
-	request.send(conn);
-	HTTPResponse response(conn);
+
+	HTTPResponse response(sendReq(request));
 	
 	unsigned long len;
 	sscanf(response["content-length"].c_str(), "%lu", &len);
@@ -47,7 +63,7 @@ size_t CloudFile::read(void *data, size_t size) {
 
 	size_t r, total = 0;
 	while(size) {
-		r = conn.read(data, size);
+		r = mConn.read(data, size);
 		total += r;
 		size -= r;
 		*(char **)&data += r;
